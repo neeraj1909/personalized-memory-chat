@@ -1,0 +1,44 @@
+[project]
+name = "mynaksh-personalized-ai-chat"
+version = "0.1.0"
+description = "A small FastAPI service for personalized AI chat with selective user memory."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.45,<2.0",
+    "opentelemetry-sdk>=1.45,<2.0",
+    "pydantic>=2.10,<3.0",
+    "pydantic-ai-slim[openai]>=1.0,<2.0",
+    "pydantic-settings>=2.6,<3.0",
+    "uvicorn[standard]>=0.30,<1.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27,<1.0",
+    "pytest>=8.3,<9.0",
+    "ruff>=0.9,<1.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "--strict-markers --strict-config"
+markers = [
+    "unit: fast tests for isolated components",
+    "integration: tests spanning the FastAPI boundary and persistence",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "TID251", "PLC0415"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"dataclasses".msg = "Use pydantic.BaseModel for application records."
+
