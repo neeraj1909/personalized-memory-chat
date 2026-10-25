@@ -55,6 +55,47 @@ def recording_app(tmp_path: Path):
 
 @pytest.mark.integration
 @pytest.mark.parametrize(
+    ("message", "opposing_history"),
+    [
+        (
+            "How should I prepare for a data analyst role?",
+            "Yaar, shuruat ke liye ek plan bana lete hain.",
+        ),
+        ("डेटा विश्लेषक की भूमिका के लिए तैयारी कैसे करूँ?", "What is a data analyst?"),
+        (
+            "Yaar, main data analyst role ke liye prepare kar raha hoon, start kahan se karoon",
+            "मुझे करियर सलाह चाहिए।",
+        ),
+    ],
+)
+@pytest.mark.parametrize("with_history", [False, True], ids=["fresh", "mixed_history"])
+def test_unset_language_uses_full_current_turn_without_saving_preference(
+    tmp_path: Path, message: str, opposing_history: str, with_history: bool
+) -> None:
+    app, prompts = recording_app(tmp_path)
+    with TestClient(app) as client:
+        if with_history:
+            assert send(client, app, opposing_history, {}).status_code == 200
+        response = send(client, app, message, {})
+    assert response.status_code == 200
+    assert prompts[-1]["current_message"] == message
+    assert prompts[-1]["reply_language"] is None
+    if with_history:
+        assert prompts[-1]["recent_history"][0] == {
+            "role": "user",
+            "content": opposing_history,
+        }
+    else:
+        assert prompts[-1]["recent_history"] == []
+    with sqlite3.connect(app.state.chat_engine.store.path) as db:
+        preferences = db.execute(
+            "SELECT value FROM user_memories WHERE user_id='a' AND memory_key='language_preference'"
+        ).fetchall()
+    assert preferences == []
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
     ("statement", "followup", "finding", "expected_key"),
     [
         (
