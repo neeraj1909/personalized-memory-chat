@@ -3,14 +3,14 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import AliasChoices, Field, SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Runtime configuration with safe defaults for local development and tests."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_name: str = "MyNaksh Personalized AI Chat"
     database_path: Path = Path("memory.db")
@@ -23,31 +23,11 @@ class Settings(BaseSettings):
     eval_judge_model: str | None = None
     otel_exporter_otlp_endpoint: str | None = None
 
-    llm_provider: str = Field(
-        default="openai-compatible",
-        validation_alias=AliasChoices("LLM_PROVIDER", "LITELLM_PROVIDER"),
-    )
-    llm_model: str = Field(
-        default="chatgpt/gpt-6.1-sol",
-        validation_alias=AliasChoices("LLM_MODEL", "LITELLM_MODEL"),
-    )
-    llm_base_url: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("LLM_BASE_URL", "LITELLM_PROVIDER_BASE_URL"),
-    )
-    llm_api_key: SecretStr | None = Field(
-        default=None,
-        validation_alias=AliasChoices(
-            "LLM_API_KEY",
-            "LITELLM_PROVIDER_API_KEY",
-        ),
-    )
-    llm_timeout_seconds: float = Field(
-        default=30.0,
-        gt=0,
-        le=120,
-        validation_alias=AliasChoices("LLM_TIMEOUT_SECONDS", "LITELLM_TIMEOUT_SECONDS"),
-    )
+    llm_provider: str = "openai-compatible"
+    llm_model: str = "chatgpt/gpt-6.1-sol"
+    llm_base_url: str | None = None
+    llm_api_key: SecretStr | None = None
+    llm_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
 
 
 @lru_cache(maxsize=1)

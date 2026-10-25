@@ -224,7 +224,7 @@ def test_durable_language_and_one_turn_override(tmp_path: Path) -> None:
         ambiguous = send(client, app, "Use that language.", {"language_scope": "clarify"})
     assert hindi.status_code == temporary.status_code == resumed.status_code == 200
     assert [prompt["reply_language"] for prompt in prompts] == ["Hindi", "English", "Hindi"]
-    assert temporary.json()["context_used"] == ["language_preference"]
+    assert temporary.json()["context_used"] == []
     assert resumed.json()["context_used"] == ["language_preference"]
     assert ambiguous.json()["response"] == "Which language would you like me to use?"
     assert ambiguous.json()["context_used"] == ["language_preference"]
@@ -368,3 +368,48 @@ def test_language_preference_counts_toward_memory_limit(tmp_path) -> None:
     assert response.status_code == 200
     assert response.json()["context_used"] == ["language_preference"]
     assert [memory["key"] for memory in prompts[-1]["relevant_memories"]] == ["language_preference"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    ("scope", "instruction", "expected_next_language"),
+    [
+        ("durable", "From now on, reply in English.", "English"),
+        ("current_turn", "For this answer only, reply in English.", "Hindi"),
+    ],
+)
+def test_explicit_language_switch_omits_stale_preference_from_reply(
+    tmp_path: Path, scope: str, instruction: str, expected_next_language: str
+) -> None:
+    app, prompts = recording_app(tmp_path)
+    with TestClient(app) as client:
+        send(
+            client,
+            app,
+            "Please reply in Hindi.",
+            {
+                "language_scope": "durable",
+                "reply_language": "Hindi",
+                "language_evidence": "Please reply in Hindi",
+            },
+        )
+        switched = send(
+            client,
+            app,
+            instruction,
+            {
+                "language_scope": scope,
+                "reply_language": "English",
+                "language_evidence": instruction,
+            },
+            session="two",
+        )
+        resumed = send(client, app, "What next?", {}, session="three")
+    assert switched.status_code == resumed.status_code == 200
+    assert prompts[-2]["reply_language"] == "English"
+    assert prompts[-2]["relevant_memories"] == []
+    assert switched.json()["context_used"] == []
+    assert prompts[-1]["reply_language"] == expected_next_language
+    assert [memory["value"] for memory in prompts[-1]["relevant_memories"]] == [
+        expected_next_language
+    ]

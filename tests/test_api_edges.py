@@ -106,18 +106,40 @@ def test_complete_history_uses_budget_without_turn_cap(tmp_path: Path) -> None:
     assert prompts[-1]["current_message"] == "Turn 22"
 
 
-def test_secret_settings_aliases_are_masked(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LITELLM_PROVIDER_BASE_URL", "https://example.invalid/v1")
-    monkeypatch.setenv("LITELLM_PROVIDER_API_KEY", "private-test-credential")
-    monkeypatch.setenv("LITELLM_MODEL", "test-model")
-    monkeypatch.delenv("LLM_BASE_URL", raising=False)
-    monkeypatch.delenv("LLM_API_KEY", raising=False)
-    monkeypatch.delenv("LLM_MODEL", raising=False)
+def test_secret_settings_are_masked(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LLM_BASE_URL", "https://example.invalid/v1")
+    monkeypatch.setenv("LLM_API_KEY", "private-test-credential")
+    monkeypatch.setenv("LLM_MODEL", "test-model")
     settings = Settings(_env_file=None)
     assert settings.llm_base_url == "https://example.invalid/v1"
     assert settings.llm_model == "test-model"
     assert isinstance(settings.llm_api_key, SecretStr)
     assert "private-test-credential" not in repr(settings)
+
+
+@pytest.mark.integration
+def test_obsolete_provider_name_does_not_enable_client(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def unexpected_client(**_kwargs):
+        pytest.fail("obsolete provider name initialized an SDK client")
+
+    monkeypatch.setattr("app.main.AsyncOpenAI", unexpected_client)
+    app = create_app(
+        settings=Settings(
+            _env_file=None,
+            database_path=tmp_path / "legacy.sqlite3",
+            llm_provider="openai",
+            llm_base_url="https://example.invalid/v1",
+            llm_api_key=SecretStr("private-test-credential"),
+            otel_exporter_otlp_endpoint=None,
+        )
+    )
+    with TestClient(app) as client:
+        response = client.post(
+            "/chat", json={"user_id": "a", "session_id": "one", "message": "Hello"}
+        )
+    assert response.status_code == 503
 
 
 @pytest.mark.integration

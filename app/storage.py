@@ -43,7 +43,7 @@ class Message(BaseModel):
 
 
 class Memory(BaseModel):
-    model_config = ConfigDict(frozen=True, populate_by_name=True)
+    model_config = ConfigDict(frozen=True)
 
     id: int
     kind: Literal["goal", "preference", "interest", "fact"] = Field(alias="memory_type")

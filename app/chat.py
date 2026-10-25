@@ -210,7 +210,7 @@ class ChatEngine:
         )
 
         allowed = {memory.id: memory for memory in considered}
-        selected = [language] if language else []
+        selected = [language] if language and scope not in {"durable", "current_turn"} else []
         for memory_id in decision.relevant_memory_ids:
             if len(selected) >= self.settings.memory_limit:
                 break

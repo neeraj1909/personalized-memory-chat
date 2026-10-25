@@ -72,8 +72,7 @@ def create_app(
         try:
             if context_model is None or reply_model is None:
                 if (
-                    runtime_settings.llm_provider.strip().casefold()
-                    in {"openai", "openai-compatible"}
+                    runtime_settings.llm_provider.strip().casefold() == "openai-compatible"
                     and runtime_settings.llm_base_url
                     and runtime_settings.llm_api_key
                 ):

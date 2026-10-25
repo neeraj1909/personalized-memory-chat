@@ -22,8 +22,8 @@ uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 `LLM_BASE_URL` is an OpenAI-compatible API base URL, usually ending in `/v1`.
 `LANGUAGE_MODEL` optionally chooses a cheaper model for the context decision;
-it defaults to `LLM_MODEL`. The existing `LITELLM_*` environment names are also
-accepted. `.env` is ignored by Git and is never needed for offline tests.
+it defaults to `LLM_MODEL`. `.env` is ignored by Git and is never needed for
+offline tests.
 
 A local SQLite file is created at `DATABASE_PATH` (default `memory.db`). Use a
 file path, including for tests; SQLite `:memory:` is deliberately unsupported
@@ -117,16 +117,22 @@ uv lock --check
 The public tests cover HTTP, cross-session Hindi/Hinglish recall, quoted
 third-party text, complete follow-up history, irrelevant-memory exclusion,
 user isolation, language switching, ambiguous requests, safe errors, and input
-limits. The fixed `evals/golden.json` contains 30 English, Hindi, and Hinglish
-turns for a separate evaluation run. Offline tests verify workflow and prompt
-boundaries; they do not prove that a live model will classify every phrase or
-write every answer correctly.
+limits. Offline tests verify workflow and prompt boundaries; they do not prove
+that a live model will classify every phrase or write every answer correctly.
 
 Docker Compose and Phoenix are optional for local trace inspection:
 
 ```bash
 docker compose up --build -d
 ```
+
+To use a separate context model, set `LANGUAGE_MODEL` when starting Compose:
+
+```bash
+LANGUAGE_MODEL=your-context-model docker compose up --build -d
+```
+
+When unset, the context agent uses the configured `LLM_MODEL`.
 
 The app listens on `127.0.0.1:8000` and Phoenix on `127.0.0.1:6006`. Set
 `OTEL_EXPORTER_OTLP_ENDPOINT` to an OTLP `/v1/traces` URL when running outside

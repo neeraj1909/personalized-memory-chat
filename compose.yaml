@@ -20,6 +20,7 @@ services:
     env_file: .env
     environment:
       DATABASE_PATH: /data/memory.db
+      LANGUAGE_MODEL: ${LANGUAGE_MODEL:-}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://phoenix:6006/v1/traces
     volumes:
       - app_data:/data
