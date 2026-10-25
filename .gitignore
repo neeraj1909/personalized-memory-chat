@@ -19,10 +19,13 @@ dist/
 *.zip
 
 # Local application state
+evals/
 *.db
 *.sqlite
 *.sqlite3
 *.pdf
+*.log
+*.pid
 
 # Editor and operating-system files
 .DS_Store
