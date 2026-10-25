@@ -12,7 +12,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    app_name: str = "MyNaksh Personalized AI Chat"
+    app_name: str = "Personalized Memory Chat"
     database_path: Path = Path("memory.db")
     max_message_chars: int = Field(default=128_000, ge=1)
     prompt_max_chars: int = Field(default=256_000, ge=1000)

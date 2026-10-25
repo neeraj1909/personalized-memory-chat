@@ -14,7 +14,7 @@ from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapProp
 from pydantic_ai import Agent
 from pydantic_ai.models.instrumented import InstrumentationSettings
 
-PROJECT_NAME = "mynaksh-assignment"
+PROJECT_NAME = "personalized-memory-chat"
 _SPAN_NAMES = frozenset(
     {
         "chat.request",
@@ -27,7 +27,7 @@ _SPAN_NAMES = frozenset(
         "chat.main_agent",
     }
 )
-_noop_tracer = NoOpTracerProvider().get_tracer("mynaksh.chat")
+_noop_tracer = NoOpTracerProvider().get_tracer("personalized_memory_chat.chat")
 _provider: TracerProvider | None = None
 
 
@@ -53,7 +53,7 @@ def configure_tracing(endpoint: str | None) -> TracerProvider | None:
 
     provider = TracerProvider(
         resource=Resource.create(
-            {"service.name": "mynaksh-chat", "openinference.project.name": PROJECT_NAME}
+            {"service.name": PROJECT_NAME, "openinference.project.name": PROJECT_NAME}
         )
     )
     provider.add_span_processor(
@@ -79,7 +79,11 @@ def trace_step(name: str, *, traceparent: str | None = None) -> AbstractContextM
         raise ValueError(f"unsupported trace step: {name}")
     if traceparent is not None and name != "chat.request":
         raise ValueError("traceparent is only accepted on the request span")
-    tracer = _provider.get_tracer("mynaksh.chat") if _provider is not None else _noop_tracer
+    tracer = (
+        _provider.get_tracer("personalized_memory_chat.chat")
+        if _provider is not None
+        else _noop_tracer
+    )
     parent_context = (
         TraceContextTextMapPropagator().extract({"traceparent": traceparent})
         if traceparent is not None

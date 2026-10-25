@@ -1,6 +1,6 @@
-# MyNaksh personalized chat
+# Personalized Memory Chat
 
-A small FastAPI chat service for the MyNaksh AI/ML Engineer assignment. It saves
+A small FastAPI chat service for the AI/ML Engineer assignment. It saves
 session messages in SQLite, keeps selected user facts across sessions, and sends
 only relevant stored facts to the reply model. There is no frontend or astrology
 calculation engine.

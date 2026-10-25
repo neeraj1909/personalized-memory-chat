@@ -1,5 +1,5 @@
 [project]
-name = "mynaksh-personalized-ai-chat"
+name = "personalized-memory-chat"
 version = "0.1.0"
 description = "A small FastAPI service for personalized AI chat with selective user memory."
 requires-python = ">=3.11"

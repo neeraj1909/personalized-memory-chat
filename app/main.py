@@ -26,7 +26,7 @@ from .config import Settings, get_settings
 from .observability import configure_tracing, shutdown_tracing, trace_step
 from .storage import ChatStore
 
-logger = logging.getLogger("mynaksh.api")
+logger = logging.getLogger("personalized_memory_chat.api")
 
 
 class ChatRequest(BaseModel):

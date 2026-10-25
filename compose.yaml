@@ -1,4 +1,4 @@
-name: mynaksh-assignment
+name: personalized-memory-chat
 
 services:
   phoenix:
@@ -8,7 +8,7 @@ services:
     volumes:
       - phoenix_data:/mnt/data
     ports:
-      - "127.0.0.1:${MYNAKSH_PHOENIX_PORT:-6006}:6006"
+      - "127.0.0.1:${PHOENIX_PORT:-6006}:6006"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6006/v1/projects', timeout=2).close()"]
       interval: 5s
@@ -25,7 +25,7 @@ services:
     volumes:
       - app_data:/data
     ports:
-      - "127.0.0.1:${MYNAKSH_APP_PORT:-8000}:8000"
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
     depends_on:
       phoenix:
         condition: service_healthy

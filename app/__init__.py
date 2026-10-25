@@ -1,1 +1,1 @@
-"""Application package for the MyNaksh personalized chat service."""
+"""Application package for the personalized memory chat service."""
