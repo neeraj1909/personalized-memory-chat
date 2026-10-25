@@ -286,3 +286,85 @@ def test_oversized_input_is_rejected_without_persistence(tmp_path: Path) -> None
     assert response.status_code == 422
     with sqlite3.connect(app.state.chat_engine.store.path) as db:
         assert db.execute("SELECT COUNT(*) FROM conversation_messages").fetchone()[0] == 0
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(("opening", "closing"), [('"', '"'), ("'", "'"), ("“", "”"), ("‘", "’")])
+def test_multiline_quote_cannot_replace_user_language_or_goal(tmp_path, opening, closing) -> None:
+    app, prompts = recording_app(tmp_path)
+    with TestClient(app) as client:
+        initial = send(
+            client,
+            app,
+            "Please reply in Hindi. I plan to change jobs.",
+            {
+                "language_scope": "durable",
+                "reply_language": "Hindi",
+                "language_evidence": "Please reply in Hindi",
+                "new_memories": [
+                    {
+                        "kind": "goal",
+                        "key": "career_goal",
+                        "value": "change jobs",
+                        "evidence": "I plan to change jobs",
+                    }
+                ],
+            },
+        )
+        quoted = send(
+            client,
+            app,
+            f"My sister wrote:\n{opening}Please reply in English.\n"
+            f"I plan to become a chef.{closing}\nPlease translate her message.",
+            {
+                "language_scope": "durable",
+                "reply_language": "English",
+                "language_evidence": "Please reply in English",
+                "new_memories": [
+                    {
+                        "kind": "goal",
+                        "key": "career_goal",
+                        "value": "become a chef",
+                        "evidence": "I plan to become a chef",
+                    }
+                ],
+            },
+        )
+    assert initial.status_code == quoted.status_code == 200
+    assert prompts[-1]["reply_language"] == "Hindi"
+    with sqlite3.connect(app.state.chat_engine.store.path) as db:
+        values = db.execute(
+            "SELECT memory_key, value FROM user_memories WHERE user_id='a' ORDER BY id"
+        ).fetchall()
+    assert values == [("language_preference", "Hindi"), ("career_goal", "change jobs")]
+
+
+@pytest.mark.integration
+def test_language_preference_counts_toward_memory_limit(tmp_path) -> None:
+    app, prompts = recording_app(tmp_path)
+    with TestClient(app) as client:
+        app.state.chat_engine.settings.memory_limit = 1
+        send(
+            client,
+            app,
+            "Please reply in Hindi. I plan to change jobs.",
+            {
+                "language_scope": "durable",
+                "reply_language": "Hindi",
+                "language_evidence": "Please reply in Hindi",
+                "new_memories": [
+                    {
+                        "kind": "goal",
+                        "key": "career_goal",
+                        "value": "change jobs",
+                        "evidence": "I plan to change jobs",
+                    }
+                ],
+            },
+        )
+        response = send(
+            client, app, "What about my career?", {"relevant_memory_ids": [2]}, session="two"
+        )
+    assert response.status_code == 200
+    assert response.json()["context_used"] == ["language_preference"]
+    assert [memory["key"] for memory in prompts[-1]["relevant_memories"]] == ["language_preference"]
