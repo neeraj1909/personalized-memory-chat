@@ -1,0 +1,40 @@
+name: mynaksh-assignment
+
+services:
+  phoenix:
+    image: arizephoenix/phoenix:20.26.0@sha256:095f498723ec1fa3b55592af83d5a1e3bf026ba15a4a44e325f20dfdbb71452a
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data
+    volumes:
+      - phoenix_data:/mnt/data
+    ports:
+      - "127.0.0.1:${MYNAKSH_PHOENIX_PORT:-6006}:6006"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6006/v1/projects', timeout=2).close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_PATH: /data/memory.db
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://phoenix:6006/v1/traces
+    volumes:
+      - app_data:/data
+    ports:
+      - "127.0.0.1:${MYNAKSH_APP_PORT:-8000}:8000"
+    depends_on:
+      phoenix:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/openapi.json', timeout=2).close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    stop_grace_period: 15s
+
+volumes:
+  app_data:
+  phoenix_data:
